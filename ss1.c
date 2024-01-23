@@ -10,7 +10,10 @@ void ReadingUserInput(){
 
 do {
     printf(">");
-    fgets(UserInput, sizeof(UserInput), stdin);
+    if (fgets(UserInput, sizeof(UserInput), stdin) == NULL) {
+        printf("\nExiting...\n");
+        break;
+    }
     
     //removes newline caused by hitting <enter> 
     int len = strlen(UserInput);
@@ -39,6 +42,7 @@ do {
 
 //repeats the above lines until the first 'token' in an inputted line is exit    
 } while(strcmp("exit", tokenArray[0]) != 0);
+ printf("\nExiting...\n");
 }
 
 
