@@ -11,7 +11,6 @@ void ReadingUserInput(){
 do {
     printf(">");
     if (fgets(UserInput, sizeof(UserInput), stdin) == NULL) {
-        printf("\nExiting...\n");
         break;
     }
     
