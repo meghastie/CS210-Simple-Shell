@@ -18,6 +18,8 @@ void ExecuteExternalProcess(){
     //Child process' behaviour
     if(forkValue == 0){
         char* args[50];
+       
+       
        //fill array with arguments
        for(int i = 0; i < 49 && tokenArray[i] != NULL; i++){
         args[i] = tokenArray[i+1];
@@ -106,6 +108,7 @@ void ReadingUserInput(){
     printf("\nExiting...\n");
 }
     
+
     
 int main(){
     ReadingUserInput();
