@@ -2,6 +2,7 @@
 #include <string.h>
 
 #define MAX_INPUT_LENGTH 512
+char[] delims = " \t|<>;&";
 
 void ReadingUserInput(){
     char UserInput[MAX_INPUT_LENGTH + 1];
@@ -23,7 +24,7 @@ do {
     
 
     //parses a line of user input
-    token = strtok(UserInput, " \t|<>;&");
+    token = strtok(UserInput, delims);
     if (token == NULL){
         tokenArray[0] = "";
         continue;
