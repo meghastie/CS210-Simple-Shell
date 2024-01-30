@@ -1,6 +1,15 @@
+#include <stdio.h>
+#include <string.h>
+
+#define MAX_INPUT_LENGTH 512
+#define delims " \t|<>;&"
+
 void display_prompt();
 
 int main(){
+    char UserInput[MAX_INPUT_LENGTH + 1];
+    char* token;
+    char* tokenArray[256];
 	
 	//Find the user home directory from the environment (3)
 	
@@ -17,7 +26,8 @@ int main(){
 		//Display prompt (1)
 		display_prompt();
 		//Read and parse user input (1)
-		
+		parse_input();
+
 		//While the command is a history invocation or alias then replace it 
 		//with the appropriate command from history or the aliased command 
 		//respectively (5 & 7)
@@ -46,5 +56,29 @@ int main(){
 	written by Andrew, Fred and John
  */
 void display_prompt(){
-	printf("This is the greatest and best shell in the world >>>>> ");
+	printf(">");
+    if (fgets(UserInput, sizeof(UserInput), stdin) == NULL) {
+        break;
+    }
+    
+    //removes newline caused by hitting <enter> 
+    int len = strlen(UserInput);
+    if(len > 0 && UserInput[len -1] == '\n'){
+        UserInput[len - 1] = '\0';
+    }
 }
+
+void parse_input(){
+	token = strtok(UserInput, delims);
+    if (token == NULL){
+        tokenArray[0] = "";
+        continue;
+        }
+    tokenArray[0] = token;
+     int i = 1;
+    while(token != NULL){
+    printf("\"%s\" \n", token);
+    tokenArray[i] = token;
+    i++; 
+    token = strtok(NULL, " \t|<>;&");
+}    }
