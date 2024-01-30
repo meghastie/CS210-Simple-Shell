@@ -2,7 +2,7 @@
 #include <string.h>
 
 #define MAX_INPUT_LENGTH 512
-char[] delims = " \t|<>;&";
+char delims[] = " \t|<>;&";
 
 void ReadingUserInput(){
     char UserInput[MAX_INPUT_LENGTH + 1];
