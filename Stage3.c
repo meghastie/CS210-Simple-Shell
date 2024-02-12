@@ -8,13 +8,16 @@
 
 #define MAX_INPUT_LENGTH 512
 char* tokenArray[50];
+char current_path[256];
+char original_path[256];
 
 // Function prototypes
 void ExecuteExternalProcess();
 void ReadingUserInput();
 void display_prompt();
 void getPath();
-void setPath(char *path);
+void setPath(char* newPath);
+
 
 void display_prompt(){
     printf("This is the greatest and best shell in the world >>>>> ");
@@ -31,7 +34,7 @@ void ExecuteExternalProcess(){
         for(int i = 0; i < 49 && tokenArray[i] != NULL; i++){
             args[i] = tokenArray[i+1];
         }
-        args[50] = NULL;  // Ensure argument array ends with NULL      
+        args[49] = NULL;  // Ensure argument array ends with NULL      
         char* command = tokenArray[0];  // Store the first token
 
         // Search along the path for the command and execute with arguments, dealing with any errors
@@ -51,17 +54,15 @@ void ExecuteExternalProcess(){
 }
 
 void getPath() {
- printf("PATH : %s\n", getenv("PATH"));
+ printf("CURRENT PATH : %s\n", getenv("PATH"));
 }
 
-void setPath(char* path) {
- if (path != NULL) {
-        int result = setenv("PATH", path, 1);
-
-    if (result == 0) {
-        printf("PATH set to: %s\n", path);
-    }
- }
+void setPath(char* newPath) { 
+ if (newPath != NULL) {
+    setenv("PATH",newPath, 1);
+    printf("PATH SET TO : %s\n", getenv("PATH"));
+ } 
+ 
 }
 
 void ReadingUserInput(){
@@ -109,29 +110,15 @@ void ReadingUserInput(){
             getPath();
         }
         else if ((strcmp("setpath", tokenArray[0])) == 0) {
-           if (tokenArray[1] != NULL) {
-                char pathBuffer[MAX_INPUT_LENGTH];
-                pathBuffer[0] = '\0';
-
-            for (int i = 1; tokenArray[i] != NULL; ++i) {
-                strcat(pathBuffer, tokenArray[i]);
-                strcat(pathBuffer, " ");
-            }
-
-            // Remove trailing space
-            if (pathBuffer[strlen(pathBuffer) - 1] == ' ') {
-                pathBuffer[strlen(pathBuffer) - 1] = '\0';
-            }
-
-             setPath(&pathBuffer[strlen("setpath")]);
-            }
+            char* newPath = tokenArray[2];
+            setPath(newPath);
         }
         else {
             ExecuteExternalProcess(); 
             }
         // Repeats the above lines until the first 'token' in an inputted line is "exit"    
     } while(strcmp("exit", tokenArray[0]));
-
+    setPath(original_path);
     printf("\nExiting...\n");
     exit(1);
 }
@@ -144,9 +131,9 @@ int main(){
     chdir(home_directory);
 
     // Save the current path (3)
-    char current_path[256];
     getcwd(current_path, sizeof(current_path));
-
+    strncpy(original_path, current_path, sizeof(current_path) - 1);
+    
     // Load history (6)
     // Load aliases (8)
 
@@ -173,7 +160,8 @@ int main(){
     // Save aliases (8)
 
     // Restore original path (3)
-    chdir(current_path);
+    home_directory = getenv("HOME");
+    chdir(home_directory);
 
     // Exit
     return 0;
