@@ -9,15 +9,15 @@
 
 #define MAX_INPUT_LENGTH 512
 char* tokenArray[50];
-char current_path[256];
 char original_path[256];
 char* commandHistory[20];
 int count = 0; //keeps track of next avalible position in circular array
 
 // Function prototypes
 void ExecuteExternalProcess();
-void ReadingUserInput();
+char* ReadUserInput();
 void display_prompt();
+void ParseString(char* userInput);
 void getPath();
 void setPath(char* newPath);
 void cd(char *path);
@@ -28,7 +28,54 @@ void addHistory(char* command);
 void display_prompt(){
     printf("This is the greatest and best shell in the world >>>>> ");
 }
+
+
+char* ReadUserInput(){
+char userInput[MAX_INPUT_LENGTH + 1];  
+
+    // Prompt user for input & read input
+    if (fgets(userInput, sizeof(userInput), stdin) == NULL) {
+        return NULL;
+    }
+
+    // Removes newline caused by hitting <enter> 
+    int len = strlen(userInput);
+    if(len > 0 && userInput[len -1] == '\n'){
+        userInput[len - 1] = '\0';
+    }
     
+    // Returns a copy of the user's input
+    char* userInputCopy = strdup(userInput);  
+    return userInputCopy;
+}
+
+
+void ParseString(char* userInput){
+    
+    // Clears tokenArray    
+    for(int i = 0; i < 50; i++ && tokenArray[i] != NULL){
+        tokenArray[i] = NULL;
+    } 
+         
+    // Parses a line of user input into tokens, storing each token in an array
+    char* token = strtok(userInput, " \t|<>;&");
+    
+    // If no user input, skip parsing
+    if (token == NULL){
+        return;
+    }
+
+    // Fill tokenArray with tokens printing each to the display
+    int i = 0;
+    while(token != NULL){
+        printf("\"%s\" \n", token);
+        tokenArray[i] = token;
+        i++; 
+        token = strtok(NULL, " \t|<>;&");
+    }
+}
+
+
 void ExecuteExternalProcess(){
     pid_t forkValue = fork();
     
@@ -48,7 +95,7 @@ void ExecuteExternalProcess(){
         if(executionStatus == -1){
             perror(command);
         }
-        exit(1);
+        exit(0);
     }
     else if(forkValue > 0){  // Parent process waits for the child process to finish
         wait(NULL);
@@ -58,6 +105,7 @@ void ExecuteExternalProcess(){
         exit(1);
     }
 }
+
 
 void cd(char *path) {
     if(path == NULL) {
@@ -69,9 +117,11 @@ void cd(char *path) {
     }
 }
 
+
 void getPath() {
  printf("CURRENT PATH : %s\n", getenv("PATH"));
 }
+
 
 void setPath(char* newPath) { 
  if (newPath != NULL) {
@@ -81,93 +131,36 @@ void setPath(char* newPath) {
  
 }
 
+
 void addHistory(char* command) {
     if (count == 20) {
       for (int i = 1; i < 20; i++){
         commandHistory[i-1] = commandHistory[i]; //when array is full shifts elements left by one position
       } 
-      count--; //count decremented to ensure it always stays in range   
+       count--; //count decremented to ensure it always stays in range  
     }
+    
     commandHistory[count] = strdup(command); 
     count++;
 }
 
-void ReadingUserInput(){
-    char userInput[MAX_INPUT_LENGTH + 1];
-    char* token;
 
-    do{
-        // Prompt user for input & read input
-        printf(">");
-        if (fgets(userInput, sizeof(userInput), stdin) == NULL) {
-            break;
-        }
+    
+       
 
-        // Removes newline caused by hitting <enter> 
-        int len = strlen(userInput);
-        if(len > 0 && userInput[len -1] == '\n'){
-            userInput[len - 1] = '\0';
-        }
+       
+        
+        
+       
 
-        // Clear tokenArray    
-        for(int i = 0; i < 50; i++ && tokenArray[i] != NULL){
-            tokenArray[i] = NULL;
-        } 
-
-        // Parses a line of user input into tokens, storing each token in an array
-        token = strtok(userInput, " \t|<>;&");
-
-        // If no user input, ensure array is not NULL and jump to while condition
-        if (token == NULL){
-            tokenArray[0] = "";
-            continue;
-        }
-
-        // Fill tokenArray with tokens printing each to the display
-        tokenArray[0] = token;
-        int i = 1;
-        while(token != NULL){
-            printf("\"%s\" \n", token);
-            tokenArray[i] = token;
-            i++; 
-            token = strtok(NULL, " \t|<>;&");
-        }
-
-        addHistory(tokenArray[0]);
-        //for (int i = 0; i < 20; i++) {
-        //printf("%s\n", commandHistory[i]);
-        //}
-        //above used to test that circular history array works correctly
-
-        if ((strcmp("getpath", tokenArray[0]) == 0)) {
-            getPath();
-        }
-        else if ((strcmp("setpath", tokenArray[0])) == 0) {
-            char* newPath = tokenArray[2];
-            setPath(newPath);
-        }
-        else if(strcmp("cd", tokenArray[0]) == 0) {
-            char* newDirectory = tokenArray[2];
-            cd(newDirectory);
-        }
-        else {
-            ExecuteExternalProcess(); 
-            }
-        // Repeats the above lines until the first 'token' in an inputted line is "exit"    
-    } while(strcmp("exit", tokenArray[0]));
-    setPath(original_path);
-    printf("\nExiting...\n");
-    exit(1);
-}
 
 int main(){
     // Find the user home directory from the environment (3)
-    char *home_directory = getenv("HOME");
-
     // Set current working directory to user home directory (3)
+    char *home_directory = getenv("HOME");
     chdir(home_directory);
 
-    // Save the current path (3)
+    char current_path[256];
     getcwd(current_path, sizeof(current_path));
     strncpy(original_path, current_path, sizeof(current_path) - 1);
     
@@ -175,22 +168,72 @@ int main(){
     // Load aliases (8)
 
     // Do while shell has not terminated
-    while(1){
+    do{
         // Display prompt (1)
         display_prompt();
+        
+        // Read user's input, if <ctrl> D terminate shell
+        char* userInput = ReadUserInput();
+        if(userInput == NULL){
+            break;
+        }
 
-        // Read and parse user input (1)
-        ReadingUserInput();
+        char tokenisedUserInput[MAX_INPUT_LENGTH + 1];
+        strcpy(tokenisedUserInput, userInput);  
 
+        // Parse user's input, if no input (i.e. <enter>) jump to end of do while loop
+        ParseString(tokenisedUserInput);
+        if(tokenArray[0] == NULL){
+            tokenArray[0] = "";
+            continue;
+        }
+
+        // If not a history invocation add user's input to history 
+         if(strncmp(tokenArray[0], "!", 1) != 0){
+            addHistory(userInput);
+         }
+        
+        // Add previous command to history again and execute again
+        if(strncmp(tokenArray[0], "!!", 2) == 0){
+            addHistory(commandHistory[count-1]);
+            ParseString(commandHistory[count-2]);
+        }
+
+        
+        
+            
+    
         // While the command is a history invocation or alias then replace it 
         // with the appropriate command from history or the aliased command 
         // respectively (5 & 7)
 
         // If command is built-in invoke appropriate function (1-5, 7)
-
+        if ((strcmp("getpath", tokenArray[0]) == 0)) {
+            getPath();
+        }
+        else if ((strcmp("setpath", tokenArray[0])) == 0) {
+            char* newPath = tokenArray[1];
+            setPath(newPath);
+        }
+        else if(strcmp("cd", tokenArray[0]) == 0) {
+            char* newDirectory = tokenArray[1];
+            cd(newDirectory);
+        }
+        else if(strcmp("history", tokenArray[0]) == 0){
+            for(int i = 0; i < count - 1; i++){
+                printf("%d  %s\n", i+1, commandHistory[i]);
+            } 
+        }
+        
         // Else execute command as an external process (2)
-    }
-    // End while (okay yes this comment is pointless)
+        else {
+            ExecuteExternalProcess(); 
+            }
+    
+    // Repeats the above lines until the first 'token' in an inputted line is "exit"
+    }while(strcmp("exit", tokenArray[0]));
+    setPath(original_path);
+    printf("\nExiting...\n");
 
     // From here down *could* be a separate exit function, depends on your logic
     // Save history (6)
