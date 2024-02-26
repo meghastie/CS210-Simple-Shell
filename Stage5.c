@@ -22,6 +22,7 @@ void getPath();
 void setPath(char* newPath);
 void cd(char *path);
 void addHistory(char* command);
+int isValidInteger(char *str, int max);
 
 
 
@@ -145,6 +146,20 @@ void addHistory(char* command) {
 }
 
 
+int isValidInteger(char *str, int max) {
+    char *endptr;
+    long value = strtol(str, &endptr, 10);
+   
+    // Checks that conversion is successful and within range
+    if (*str != '\0' && *endptr == '\0' && value >= 1 && value <= max) {
+        return 1;  
+    } 
+    else {
+        return 0;  
+    }
+}
+
+
     
        
 
@@ -193,10 +208,42 @@ int main(){
             addHistory(userInput);
          }
         
-        // Add previous command to history again and execute again
+        // Execute previous command again
         if(strncmp(tokenArray[0], "!!", 2) == 0){
-            addHistory(commandHistory[count-1]);
-            ParseString(commandHistory[count-2]);
+            ParseString(commandHistory[count-1]);
+        }
+        else if (strncmp(tokenArray[0], "!-", 2) == 0 && tokenArray[1] != NULL){
+            if(isValidInteger(tokenArray[1], count)){
+                int historyNumber = atoi(tokenArray[1]);
+                ParseString(commandHistory[count-historyNumber]);
+            }
+            else{
+                if(count>0){
+                printf("Invalid history number. Please enter an integer within range 1-%d. \n", count);
+                continue;
+                }
+                else{
+                    printf("Invalid history number. History is empty.\n");
+                    continue;
+                }
+            }           
+            
+        }
+        else if (strncmp(tokenArray[0], "!", 1) == 0 && tokenArray[1] != NULL){
+            if(isValidInteger(tokenArray[1], count)){
+                int historyNumber = atoi(tokenArray[1]);
+                ParseString(commandHistory[historyNumber-1]);
+            } 
+            else{
+                if(count>0){
+                printf("Invalid history number. Please enter an integer within range 1-%d. \n", count);
+                continue;
+                }
+                else{
+                    printf("Invalid history number. History is empty.\n");
+                    continue;
+                }
+            }   
         }
 
         
@@ -220,7 +267,10 @@ int main(){
             cd(newDirectory);
         }
         else if(strcmp("history", tokenArray[0]) == 0){
-            for(int i = 0; i < count - 1; i++){
+            for(int i = 0; i < count; i++){
+                if(i == count-1 && strcmp(userInput, commandHistory[i]) == 0){
+                    continue;
+                }
                 printf("%d  %s\n", i+1, commandHistory[i]);
             } 
         }
@@ -245,7 +295,7 @@ int main(){
 
     // Exit
     return 0;
-}
+} 
 
 /*
     Displays the shell prompt. Should make prompt constant?
