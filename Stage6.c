@@ -171,7 +171,7 @@ void saveHist() {
     else {
 
     for (int i = 0; i < count; i++) {
-        fprintf(fptr, "%d %s\n", i + 1, commandHistory[i]);
+        fprintf(fptr, "%d %s\n", commandHistory[i]);
         }
     }
 
