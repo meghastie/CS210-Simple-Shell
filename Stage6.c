@@ -171,7 +171,7 @@ void saveHist() {
     else {
 
     for (int i = 0; i < count; i++) {
-        fprintf(fptr, "%d %s\n", commandHistory[i]);
+        fprintf(fptr, "%s\n", commandHistory[i]);
         }
     }
 
@@ -304,7 +304,7 @@ int main(){
                 if(i == count-1 && strcmp(userInput, commandHistory[i]) == 0){
                     continue;
                 }
-                printf("%d  %s\n", i+1, commandHistory[i]);
+                printf("%d %s\n", i+1, commandHistory[i]);
             } 
         }
         
@@ -338,3 +338,15 @@ int main(){
     side effects: prints prompt to stdout
     written by Andrew, Fred and John
 */
+
+
+
+
+
+
+
+
+
+
+
+
