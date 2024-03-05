@@ -166,7 +166,7 @@ void saveHist() {
     
     if (fptr == NULL ) {
         perror("Unable to find file");
-        exit(1);
+        return;
     }
     else {
 
@@ -186,7 +186,7 @@ void loadHist() {
     FILE* fptr = fopen(".hist_list.txt", "r");
     if (fptr == NULL ) {
         perror("Unable to find file");
-        exit(1);
+        return;
     }
     else {
         while (fgets(line, sizeof(line), fptr) != NULL) {
