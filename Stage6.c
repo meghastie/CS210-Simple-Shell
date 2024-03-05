@@ -56,7 +56,7 @@ char userInput[MAX_INPUT_LENGTH + 1];
 void ParseString(char* userInput){
     
     // Clears tokenArray    
-    for(int i = 0; i < 50; i++ && tokenArray[i] != NULL){
+    for(int i = 0; i < 50 && tokenArray[i] != NULL; i++){
         tokenArray[i] = NULL;
     } 
          
