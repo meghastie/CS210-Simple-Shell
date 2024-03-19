@@ -60,7 +60,8 @@ char userInput[MAX_INPUT_LENGTH + 1];
     }
     
     // Returns a copy of the user's input
-    char* userInputCopy = strdup(userInput);  
+    char* userInputCopy = strdup(userInput);  {
+        
     return userInputCopy;
 }
 
@@ -149,6 +150,8 @@ void setPath(char* newPath) {
 
 void addHistory(char* command) {
     if (count == 20) {
+        free(commandHistory[0]);
+
       for (int i = 1; i < 20; i++){
         commandHistory[i-1] = commandHistory[i]; //when array is full shifts elements left by one position
       } 
