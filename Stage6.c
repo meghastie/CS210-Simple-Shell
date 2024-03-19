@@ -136,6 +136,7 @@ void setPath(char* newPath) {
 
 
 void addHistory(char* command) {
+    free(commandHistory[0]);
     if (count == 20) {
       for (int i = 1; i < 20; i++){
         commandHistory[i-1] = commandHistory[i]; //when array is full shifts elements left by one position
