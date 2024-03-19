@@ -137,6 +137,7 @@ void setPath(char* newPath) {
 
 void addHistory(char* command) {
     if (count == 20) {
+    free(commandHistory[0]);
       for (int i = 1; i < 20; i++){
         commandHistory[i-1] = commandHistory[i]; //when array is full shifts elements left by one position
       } 
@@ -289,11 +290,19 @@ int main(){
 
         // If command is built-in invoke appropriate function (1-5, 7)
         if ((strcmp("getpath", tokenArray[0]) == 0)) {
-            getPath();
+        	if (tokenArray[1] != NULL) {
+        		printf("Error: getpath does not accept any parameters\n");
+                } else {
+            		getPath();
+            }
         }
         else if ((strcmp("setpath", tokenArray[0])) == 0) {
-            char* newPath = tokenArray[1];
-            setPath(newPath);
+            if (tokenArray[1] == NULL) {
+            		printf("Error: setpath needs a parameter\n");
+                } else {
+            		char* newPath = tokenArray[1];
+            		setPath(newPath);
+        }
         }
         else if(strcmp("cd", tokenArray[0]) == 0) {
             char* newDirectory = tokenArray[1];
@@ -338,6 +347,7 @@ int main(){
     side effects: prints prompt to stdout
     written by Andrew, Fred and John
 */
+
 
 
 
