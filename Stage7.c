@@ -14,6 +14,8 @@ char* tokenArray[50];
 char original_path[256];
 char* commandHistory[20];
 int count = 0; //keeps track of next avalible position in circular array
+char aliasList[ALIAS_LIMIT][MAX_INPUT_LENGTH];
+char aliasCommands[ALIAS_LIMIT][MAX_INPUT_LENGTH];
 
 // Function prototypes
 void ExecuteExternalProcess();
@@ -25,15 +27,19 @@ void setPath(char* newPath);
 void cd(char *path);
 void addHistory(char* command);
 int isValidInteger(char *str, int max);
+void saveHist();
+void loadHist();
 
-char aliasList[ALIAS_LIMIT][MAX_INPUT_LENGTH];
-char aliasCommands[ALIAS_LIMIT][MAX_INPUT_LENGTH];
+
 int aliasListLength();
 void newAlias (char *alias, char *command);
 void deleteAlias(char *alias);
 void displayAliases();
-void exComm(char* command);
-void exAlias(char* alias, char* parameter);
+void executeAlias();
+//void exComm(char* command);
+//void exAlias(char* alias, char* parameter);
+
+
 
 
 void display_prompt(){
@@ -56,8 +62,10 @@ char userInput[MAX_INPUT_LENGTH + 1];
     }
     
     // Returns a copy of the user's input
-    char* userInputCopy = strdup(userInput);  
+    char* userInputCopy = strdup(userInput);  {
+        
     return userInputCopy;
+}
 }
 
 
@@ -93,6 +101,7 @@ void ExecuteExternalProcess(){
     // Child process' behavior
     if(forkValue == 0){
         char* args[50];
+        int isAlias = 0;
         
         // Fill array with arguments
         for(int i = 0; i < 49 && tokenArray[i] != NULL; i++){
@@ -101,10 +110,61 @@ void ExecuteExternalProcess(){
         args[49] = NULL;  // Ensure argument array ends with NULL      
         char* command = tokenArray[0];  // Store the first token
 
+	
+	for (int i = 0; i < ALIAS_LIMIT; i++) {
+		if (strcmp(command, aliasList[i]) == 0) {
+		char* aliasedCommand = aliasCommands[i]; 
+		
+	//now check alias against built in commands	
+	if ((strcmp("getpath", aliasedCommand) == 0)) {
+			if(tokenArray[1] != NULL){
+				printf("Error: getpath does not accept any parameters. Try again wihout parameters\n");
+			} else {
+				
+            getPath();
+        	}
+      	}
+        else if ((strcmp("setpath", aliasedCommand)) == 0) {
+		if (tokenArray[1] == NULL) {
+			printf("Error: setpath needs a parameter.\n");		
+        	} else {
+			char* newPath = tokenArray[1];
+            		setPath(newPath);	
+		}
+	}
+        else if(strcmp("cd", aliasedCommand) == 0) {
+            char* newDirectory = tokenArray[1];
+            cd(newDirectory);
+        }
+        else if(strcmp("history", aliasedCommand) == 0){
+            for(int i = 0; i < count; i++){
+                if(i == count-1 && strcmp(aliasedCommand, commandHistory[i]) == 0){
+                    continue;
+                }
+                printf("%d %s\n", i+1, commandHistory[i]);
+            } 
+        }
+        else if(strcmp(aliasedCommand, "exit") == 0) {
+        strcpy(tokenArray[0], "exit");
+        return;
+        }	
+		
+		
+	int executionStatus = execvp(aliasedCommand, args);    
+        if(executionStatus == -1){ 
+            perror(command); 
+            } 
+	isAlias = 1; 
+	break; 
+	} 
+	} 
+
+	if (!isAlias) {
         // Search along the path for the command and execute with arguments, dealing with any errors
         int executionStatus = execvp(command, args);   
         if(executionStatus == -1){
             perror(command);
+        }
         }
         exit(0);
     }
@@ -123,7 +183,7 @@ void cd(char *path) {
         fprintf(stderr, "Usage: cd <directory>\n");
     } else {
         if(chdir(path) != 0) {
-            perror("cd has failed.");
+            perror("cd");
         }
     }
 }
@@ -145,6 +205,8 @@ void setPath(char* newPath) {
 
 void addHistory(char* command) {
     if (count == 20) {
+        free(commandHistory[0]);
+
       for (int i = 1; i < 20; i++){
         commandHistory[i-1] = commandHistory[i]; //when array is full shifts elements left by one position
       } 
@@ -167,30 +229,68 @@ int isValidInteger(char *str, int max) {
     else {
         return 0;  
     }
+    
+    
 }
 
-void newAlias(char *alias, char *command) {
+
+
+void saveHist() {
+    FILE* fptr = fopen(".hist_list.txt", "w");
+    
+    if (fptr == NULL ) {
+        perror("Unable to find file");
+        return;
+    }
+    else {
+
+    for (int i = 0; i < count; i++) {
+        fprintf(fptr, "%d %s\n",i +1, commandHistory[i]);
+        }
+    }
+
+    fclose(fptr);
+}
+    
+void loadHist() {
+
+    char line[512];
+    char* token;
+
+    FILE* fptr = fopen(".hist_list.txt", "r");
+    if (fptr == NULL ) {
+        perror("Unable to find file");
+        return;
+    }
+    else {
+        while (fgets(line, sizeof(line), fptr) != NULL) {
+            token = strtok(line, " ");
+            if (token != NULL) {
+                token = strtok(NULL, " \n");
+                addHistory(token);
+            }
+        }
+    }
+
+fclose(fptr);
+}
+
+void newAlias(char *command, char *alias) {
     // Checks if the alias isn't already used.
     for (int i = 0; i < ALIAS_LIMIT; i++) {
-		
         if (strcmp(aliasList[i], alias) == 0) {
-			
             strcpy(aliasCommands[i], command);
-            printf("Alias '%s' has been updated.\n", alias);
-			
+            printf("Alias '%s' has been updated.\n", alias);			
             return;
         }
     }
 	
 	  // Find empty space to store new alias.
     for (int i = 0; i < ALIAS_LIMIT; i++) {
-		
         if (strlen(aliasList[i]) == 0) {
-			
             strcpy(aliasList[i], alias);
             strcpy(aliasCommands[i], command);
-            printf("Alias '%s'has been added.\n", alias);
-			
+            printf("Alias '%s'has been added.\n", alias);	
             return;
         }
     }
@@ -221,31 +321,37 @@ void displayAliases() {
 	
     for (int i = 0; i < ALIAS_LIMIT; i++) {
 		
-		if (aliasListLength(aliasList == 0))	{
-			
-			printf("There are no saved alisas :/.\n");
-			
-		} else if (aliasListLength(aliasList[i]) > 0) {
+	if (aliasListLength(aliasList[i]) > 0) {
 			
             printf("%s\t%s\n", aliasList[i], aliasCommands[i]);
-        }
+			
+        } else {
+			
+			printf("This alias slot is empty.\n");
     }
 }
+}
 
-		int aliasListLength() {
-			
-			int length = 0;
-			
-			for (int i = 0; i < ALIAS_LIMIT; i++) {
-				
-			if (strlen(aliasList[i]) > 0) {
-				
-				length++;
-			}
-			
-			}
-			return length;
-		}						
+int aliasListLength() {
+	int length = 0;			
+	for (int i = 0; i < ALIAS_LIMIT; i++) {				
+	if (strlen(aliasList[i]) > 0) {			
+  		length++;
+  	}
+}
+return length;
+}	
+
+void executeAlias(char *alias, char* parameter) {
+	for (int i = 0; i < ALIAS_LIMIT; i++) {
+	if (strcmp(aliasList[i],alias) == 0) {
+	strcpy(tokenArray[0], aliasCommands[i]);
+	ExecuteExternalProcess();
+	return;
+	}
+	}
+	printf("ALias not found");
+}		
 
 int main(){
     // Find the user home directory from the environment (3)
@@ -258,6 +364,7 @@ int main(){
     strncpy(original_path, current_path, sizeof(current_path) - 1);
     
     // Load history (6)
+    loadHist();
     // Load aliases (8)
 
     // Do while shell has not terminated
@@ -323,60 +430,51 @@ int main(){
                 }
             }   
         }
-		
-		// Alias Commands
-        if(strcmp("alias", tokenArray[0]) == 0) {
-			
-            // adds new alias
-            if(tokenArray[1] != NULL && tokenArray[2] != NULL) {
-				
-                newAlias(tokenArray[1], tokenArray[2]);
-				
-            } else {
-				
-                printf("New Alias: alias <aliasname> <command>\n");
-				
-            }
-            continue;
-			
-        } else if(strcmp("unalias", tokenArray[0]) == 0) {
-			
+        		// Alias Commands
+        else if((strcmp("alias", tokenArray[0]) == 0) && tokenArray[1] == NULL) {
+		displayAliases();
+            	continue;	
+        } 
+        else if(strcmp("unalias", tokenArray[0]) == 0) {	
             // Call function to handle unalias
-            if(tokenArray[1] != NULL) {
-				
-                deleteAlias(tokenArray[1]);
-				
-            } else {
-				
-                printf("Removing Alias...: unalias <aliasname>\n");
+            if(tokenArray[1] != NULL) {		
+                deleteAlias(tokenArray[1]);		
+            } else {		
+                printf("Please enter a parameter for the alias you wan to remove. \n");
             }
-            continue; // Skip the rest of the loop
-			
-        } else if(strcmp("alias", tokenArray[0]) == 0) {
-			
-            displayAliases();
-			
+            continue;	
+        } else if (strcmp("alias", tokenArray[0]) == 0) {	
+                  // adds new alias
+            if(tokenArray[1] != NULL && tokenArray[2] != NULL) {		
+                newAlias(tokenArray[1], tokenArray[2]);
+				printf("New Alias: alias %s %s\n", tokenArray[1], tokenArray[2]);		
+            } else {	
+                printf("Please enter parameters for the alias command. \n");		
+            }
             continue;
         }
-		
-		
-	
-        
-        
-            
-    
+  
         // While the command is a history invocation or alias then replace it 
         // with the appropriate command from history or the aliased command 
         // respectively (5 & 7)
 
         // If command is built-in invoke appropriate function (1-5, 7)
         if ((strcmp("getpath", tokenArray[0]) == 0)) {
+			if(tokenArray[1] != NULL){
+				printf("Error: getpath does not accept any parameters. Try again wihout parameters\n");
+			} else {
+				
             getPath();
         }
+      }
         else if ((strcmp("setpath", tokenArray[0])) == 0) {
-            char* newPath = tokenArray[1];
-            setPath(newPath);
-        }
+		if (tokenArray[1] == NULL) {
+			printf("Error: setpath needs a parameter.\n");		
+        	} else {
+			char* newPath = tokenArray[1];
+            		setPath(newPath);	
+		}
+		}
         else if(strcmp("cd", tokenArray[0]) == 0) {
             char* newDirectory = tokenArray[1];
             cd(newDirectory);
@@ -386,7 +484,7 @@ int main(){
                 if(i == count-1 && strcmp(userInput, commandHistory[i]) == 0){
                     continue;
                 }
-                printf("%d  %s\n", i+1, commandHistory[i]);
+                printf("%d %s\n", i+1, commandHistory[i]);
             } 
         }
         
@@ -396,21 +494,25 @@ int main(){
             }
     
     // Repeats the above lines until the first 'token' in an inputted line is "exit"
-    }while(strcmp("exit", tokenArray[0]));
+    }while(strcmp("exit", tokenArray[0]));{
     setPath(original_path);
     printf("\nExiting...\n");
 
     // From here down *could* be a separate exit function, depends on your logic
     // Save history (6)
+    saveHist();
     // Save aliases (8)
 
     // Restore original path (3)
     home_directory = getenv("HOME");
     chdir(home_directory);
+   
 
     // Exit
     return 0;
-} 
+
+}
+}
 
 /*
     Displays the shell prompt. Should make prompt constant?
@@ -419,4 +521,9 @@ int main(){
     side effects: prints prompt to stdout
     written by Andrew, Fred and John
 */
+
+
+
+
+
 
