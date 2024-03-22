@@ -446,7 +446,7 @@ int main(){
         } else if (strcmp("alias", tokenArray[0]) == 0) {	
                   // adds new alias
             if(tokenArray[1] != NULL && tokenArray[2] != NULL) {		
-                newAlias(tokenArray[1], tokenArray[2]);
+                newAlias(tokenArray[2], tokenArray[1]);
 				printf("New Alias: alias %s %s\n", tokenArray[1], tokenArray[2]);		
             } else {	
                 printf("Please enter parameters for the alias command. \n");		
