@@ -171,13 +171,21 @@ void ExecuteExternalProcess(){
 
 //change directory 
 void cd(char *path) {
-    if(path == NULL) {
-        fprintf(stderr, "Usage: cd <directory>\n");
-    } else {
-        if(chdir(path) != 0) {
-            perror("cd");
-        }
+	if (strcmp(path, "") == 0) {
+		if (chdir(getenv("HOME")) == -1) {
+			perror("cd");
+		} else {
+			char cwd[256];
+			printf("changing directory to Home: %s \n", getcwd(cwd, sizeof(cwd)));
+			}
+	} else {
+		if (chdir(path) == -1) {
+			perror("cd");
+		} else {
+		  	char cwd[256];
+			printf("changing directory to: %s \n", getcwd(cwd, sizeof(cwd)));
     }
+}
 }
 
 //get current path
@@ -251,7 +259,7 @@ void loadHist() {
 
     FILE* fptr = fopen(".hist_list.txt", "r");
     if (fptr == NULL ) {
-        perror("Unable to find file");
+        perror("Unable to find file .hist_list");
         return;
     }
     else {
@@ -360,7 +368,7 @@ void loadAliases() {
 
     FILE* fptr = fopen(".aliases", "r");
     if (fptr == NULL ) {
-        perror("Unable to find file");
+        perror("Unable to find file .aliases");
         return;
     }
     else {
@@ -409,6 +417,11 @@ int main(){
         if(tokenArray[0] == NULL){
             tokenArray[0] = "";
             continue;
+        }
+        
+        else if(strcmp("history", tokenArray[0]) == 0 && commandHistory[0] == 0){
+        	printf("Error: command history is empty\n");
+        	continue;
         }
 
         // If not a history invocation add user's input to history 
@@ -493,23 +506,31 @@ int main(){
         else if ((strcmp("setpath", tokenArray[0])) == 0) {
 		if (tokenArray[1] == NULL) {
 			printf("Error: setpath needs a parameter.\n");		
-        	} else {
+        	} else if (tokenArray[1] != NULL && tokenArray[2] != NULL) {
+        		printf("Error: too many parameters for setpath. Try again with one parameter.\n");	
+        	}
+        	else {
 			char* newPath = tokenArray[1];
             		setPath(newPath);	
 		}
 		}
         else if(strcmp("cd", tokenArray[0]) == 0) {
-            char* newDirectory = tokenArray[1];
-            cd(newDirectory);
+        	if (tokenArray[2] != NULL) {
+        		printf("Error: too many parameters for cd. Try again with one parameter.\n");
+        	} else if (tokenArray[1] == NULL) {
+        		cd("");
+        	} else {
+            		char* newDirectory = tokenArray[1];
+           		 cd(newDirectory);
+           	}
         }
+        
         else if(strcmp("history", tokenArray[0]) == 0){
             for(int i = 0; i < count; i++){
-                if(i == count-1 && strcmp(userInput, commandHistory[i]) == 0){
-                    continue;
-                }
                 printf("%d %s\n", i+1, commandHistory[i]);
             } 
         }
+        
         
         // Else execute command as an external process (2)
         else {
